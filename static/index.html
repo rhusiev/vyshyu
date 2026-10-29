@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wishlist</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1 id="title">Wishlist</h1>
+      <p id="subtitle" class="subtitle"></p>
+    </div>
+    <button id="whoami" class="whoami" type="button" hidden>
+      <span class="avatar-slot"></span>
+      <span class="whoami-name"></span>
+    </button>
+  </header>
+
+  <main>
+    <ul id="items" class="items" aria-live="polite"></ul>
+    <p id="error" class="error" hidden></p>
+  </main>
+
+  <dialog id="item-dialog" class="card-dialog">
+    <div class="dialog-body">
+      <form method="dialog" class="dialog-close"><button aria-label="Close">×</button></form>
+      <h2 class="dialog-label"></h2>
+      <div class="want"></div>
+      <p class="dialog-description"></p>
+      <section class="givers-section">
+        <h3>Going to gift it</h3>
+        <ul class="givers"></ul>
+        <p class="no-givers">Nobody yet - it's up for grabs.</p>
+      </section>
+      <button class="pledge primary" type="button"></button>
+    </div>
+  </dialog>
+
+  <dialog id="name-dialog" class="name-dialog">
+    <form id="name-form" method="dialog">
+      <h2>What's your name?</h2>
+      <p class="hint">So others know who's bringing what. It's remembered on this device.</p>
+      <div class="name-row">
+        <span class="avatar-slot"></span>
+        <input id="name-input" name="username" maxlength="40" autocomplete="nickname" required>
+      </div>
+      <div class="actions">
+        <button value="cancel" formnovalidate type="submit">Cancel</button>
+        <button value="ok" class="primary" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

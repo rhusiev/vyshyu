@@ -1,0 +1,14 @@
+services:
+  wishlist:
+    build: .
+    container_name: wishlist
+    restart: unless-stopped
+    volumes:
+      - ./config.toml:/config/config.toml:ro
+      - ./data:/data
+    networks:
+      - caddy
+
+networks:
+  caddy:
+    external: true

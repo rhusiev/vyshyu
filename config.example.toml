@@ -1,0 +1,31 @@
+# Copy to config.toml and edit. The app re-reads it on the next request after a save
+
+title = "My wishlist"
+subtitle = "Things that would make me happy - tap one to see more"
+
+# Card previews cut the description after this many characters; the popup shows it all
+preview_chars = 120
+
+# How much each item is wanted, shown as hearts from min to max
+[want]
+min = 1
+max = 5
+
+# `id` ties pledges to an item - keep it stable when you reword the label.
+# `description` and `want` are optional; `want` defaults to want.min
+[[items]]
+id = "fountain-pen"
+label = "A fountain pen"
+description = "Fine nib, any colour except red. Something that writes smoothly on cheap paper too."
+want = 5
+
+[[items]]
+id = "board-game"
+label = "Wingspan board game"
+description = "The base game is enough."
+want = 3
+
+[[items]]
+id = "socks"
+label = "Warm socks"
+want = 1
