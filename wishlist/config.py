@@ -7,6 +7,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 DEFAULT_PREVIEW_CHARS = 120
+SUPPORTED_LANGUAGES = ("en", "uk")
+
+# Text shown to visitors: one string for every language, or one per language code
+Localized = str | dict[str, str]
 
 
 class ConfigError(ValueError):
@@ -18,8 +22,8 @@ class Item:
     """One thing on the wishlist."""
 
     id: str
-    label: str
-    description: str
+    label: Localized
+    description: Localized
     want: int
 
 
@@ -27,8 +31,8 @@ class Item:
 class Wishlist:
     """The whole configured wishlist."""
 
-    title: str
-    subtitle: str
+    title: Localized
+    subtitle: Localized
     preview_chars: int
     want_min: int
     want_max: int
@@ -58,8 +62,8 @@ def parse_config(raw: dict) -> Wishlist:
     if not isinstance(preview_chars, int) or preview_chars < 1:
         raise ConfigError("preview_chars must be a positive integer")
     return Wishlist(
-        title=str(raw.get("title", "Wishlist")),
-        subtitle=str(raw.get("subtitle", "")),
+        title=_localized(raw.get("title", "Wishlist"), "title"),
+        subtitle=_localized(raw.get("subtitle", ""), "subtitle"),
         preview_chars=preview_chars,
         want_min=want_min,
         want_max=want_max,
@@ -74,21 +78,35 @@ def _int(table: dict, key: str, where: str) -> int:
     return value
 
 
+def _localized(value: object, where: str, *, required: bool = False) -> Localized:
+    if isinstance(value, str):
+        texts = {"": value.strip()}
+    elif isinstance(value, dict) and all(isinstance(v, str) for v in value.values()):
+        unknown = sorted(set(value) - set(SUPPORTED_LANGUAGES))
+        if unknown:
+            supported = ", ".join(SUPPORTED_LANGUAGES)
+            raise ConfigError(f"{where}: unknown language {unknown[0]!r}, use {supported}")
+        texts = {lang: text.strip() for lang, text in value.items()}
+    else:
+        raise ConfigError(f"{where} must be a string or a table of strings per language")
+    if required and (not texts or not all(texts.values())):
+        raise ConfigError(f"{where} must not be empty")
+    return texts[""] if "" in texts else texts
+
+
 def _parse_item(entry: dict, index: int, want_min: int, want_max: int) -> Item:
     where = f"items[{index}]"
     item_id = entry.get("id")
-    label = entry.get("label")
     if not isinstance(item_id, str) or not item_id.strip():
         raise ConfigError(f"{where}.id must be a non-empty string")
-    if not isinstance(label, str) or not label.strip():
-        raise ConfigError(f"{where}.label must be a non-empty string")
+    label = _localized(entry.get("label"), f"{where}.label", required=True)
     want = entry.get("want", want_min)
     if not isinstance(want, int) or not want_min <= want <= want_max:
         raise ConfigError(f"{where}.want must be an integer in {want_min}..{want_max}")
     return Item(
         id=item_id.strip(),
-        label=label.strip(),
-        description=str(entry.get("description", "")).strip(),
+        label=label,
+        description=_localized(entry.get("description", ""), f"{where}.description"),
         want=want,
     )
 

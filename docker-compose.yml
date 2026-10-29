@@ -3,6 +3,10 @@ services:
     build: .
     container_name: wishlist
     restart: unless-stopped
+    # GOOGLE_CLIENT_ID and WISHLIST_SECRET_KEY, see README
+    env_file:
+      - path: .env
+        required: false
     volumes:
       - ./config.toml:/config/config.toml:ro
       - ./data:/data

@@ -1,7 +1,11 @@
 # Copy to config.toml and edit. The app re-reads it on the next request after a save
+#
+# Any text (title, subtitle, label, description) is either one string shown in every
+# language, or a table with one string per language: { en = "...", uk = "..." }.
+# A language missing from a table falls back to English
 
-title = "My wishlist"
-subtitle = "Things that would make me happy - tap one to see more"
+title = { en = "My wishlist", uk = "Мій список бажань" }
+subtitle = { en = "Things that would make me happy - tap one to see more", uk = "Те, що мене потішить - натисніть, щоб побачити більше" }
 
 # Card previews cut the description after this many characters; the popup shows it all
 preview_chars = 120
@@ -15,17 +19,17 @@ max = 5
 # `description` and `want` are optional; `want` defaults to want.min
 [[items]]
 id = "fountain-pen"
-label = "A fountain pen"
-description = "Fine nib, any colour except red. Something that writes smoothly on cheap paper too."
+label = { en = "A fountain pen", uk = "Перова ручка" }
+description = { en = "Fine nib, any colour except red. Something that writes smoothly on cheap paper too.", uk = "Тонке перо, будь-якого кольору, крім червоного. Щоб гарно писала й на дешевому папері." }
 want = 5
 
 [[items]]
 id = "board-game"
-label = "Wingspan board game"
-description = "The base game is enough."
+label = "Wingspan"
+description = { en = "The base game is enough.", uk = "Достатньо базової гри." }
 want = 3
 
 [[items]]
 id = "socks"
-label = "Warm socks"
+label = { en = "Warm socks", uk = "Теплі шкарпетки" }
 want = 1

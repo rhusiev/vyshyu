@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Wishlist</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
   <script type="module" src="app.js"></script>
 </head>
@@ -13,11 +13,21 @@
     <div>
       <h1 id="title">Wishlist</h1>
       <p id="subtitle" class="subtitle"></p>
+      <p class="legend">
+        <span class="legend-hearts" aria-hidden="true"><span>♥</span><span>♥</span><span>♥</span></span>
+        <span data-i18n="heartsHint"></span>
+      </p>
     </div>
-    <button id="whoami" class="whoami" type="button" hidden>
-      <span class="avatar-slot"></span>
-      <span class="whoami-name"></span>
-    </button>
+    <div class="top-controls">
+      <div class="languages" role="group" aria-label="Language">
+        <button type="button" data-language="en">EN</button>
+        <button type="button" data-language="uk">УК</button>
+      </div>
+      <button id="whoami" class="whoami" type="button" hidden>
+        <span class="avatar-slot"></span>
+        <span class="whoami-name"></span>
+      </button>
+    </div>
   </header>
 
   <main>
@@ -27,14 +37,14 @@
 
   <dialog id="item-dialog" class="card-dialog">
     <div class="dialog-body">
-      <form method="dialog" class="dialog-close"><button aria-label="Close">×</button></form>
+      <form method="dialog" class="dialog-close"><button data-i18n-label="close">×</button></form>
       <h2 class="dialog-label"></h2>
       <div class="want"></div>
       <p class="dialog-description"></p>
       <section class="givers-section">
-        <h3>Going to gift it</h3>
+        <h3 data-i18n="givingHeading"></h3>
         <ul class="givers"></ul>
-        <p class="no-givers">Nobody yet - it's up for grabs.</p>
+        <p class="no-givers" data-i18n="nobodyYet"></p>
       </section>
       <button class="pledge primary" type="button"></button>
     </div>
@@ -42,16 +52,23 @@
 
   <dialog id="name-dialog" class="name-dialog">
     <form id="name-form" method="dialog">
-      <h2>What's your name?</h2>
-      <p class="hint">So others know who's bringing what. It's remembered on this device.</p>
+      <h2 id="name-title"></h2>
+      <p id="name-hint" class="hint"></p>
       <div class="name-row">
         <span class="avatar-slot"></span>
         <input id="name-input" name="username" maxlength="40" autocomplete="nickname" required>
       </div>
+      <p id="name-error" class="field-error" hidden></p>
       <div class="actions">
-        <button value="cancel" formnovalidate type="submit">Cancel</button>
-        <button value="ok" class="primary" type="submit">Save</button>
+        <button id="sign-out" type="button" class="quiet" data-i18n="signOut" hidden></button>
+        <button value="cancel" formnovalidate type="submit" data-i18n="cancel"></button>
+        <button value="ok" class="primary" type="submit" data-i18n="save"></button>
       </div>
+      <section id="google-section" class="google-section" hidden>
+        <div class="divider"><span data-i18n="or"></span></div>
+        <div id="google-button" class="google-button"></div>
+        <p class="hint small" data-i18n="googleWhy"></p>
+      </section>
     </form>
   </dialog>
 </body>

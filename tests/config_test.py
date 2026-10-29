@@ -19,6 +19,9 @@ def test_item_defaults_to_lowest_want_and_empty_description() -> None:
         ({"want": {"min": 1}}, "want.max"),
         ({"want": WANT, "items": [{"id": "a", "label": "A", "want": 4}]}, "want"),
         ({"want": WANT, "items": [{"id": "a", "label": " "}]}, "label"),
+        ({"want": WANT, "items": [{"id": "a", "label": {"en": "A", "uk": ""}}]}, "label"),
+        ({"want": WANT, "items": [{"id": "a", "label": {"ua": "A"}}]}, "unknown language 'ua'"),
+        ({"want": WANT, "items": [{"id": "a", "label": 5}]}, "label"),
         ({"want": WANT, "items": [{"label": "A"}]}, "id"),
         (
             {"want": WANT, "items": [{"id": "a", "label": "A"}, {"id": "a", "label": "B"}]},
@@ -30,3 +33,17 @@ def test_item_defaults_to_lowest_want_and_empty_description() -> None:
 def test_invalid_config_is_rejected(raw: dict, message: str) -> None:
     with pytest.raises(ConfigError, match=message):
         parse_config(raw)
+
+
+def test_text_can_be_given_per_language() -> None:
+    wishlist = parse_config(
+        {
+            "title": {"en": "Wishlist", "uk": "Список бажань"},
+            "want": WANT,
+            "items": [{"id": "a", "label": {"en": " Pen ", "uk": "Ручка"}, "description": "x"}],
+        }
+    )
+
+    assert wishlist.title == {"en": "Wishlist", "uk": "Список бажань"}
+    assert wishlist.items[0].label == {"en": "Pen", "uk": "Ручка"}
+    assert wishlist.items[0].description == "x"

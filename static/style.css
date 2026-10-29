@@ -49,6 +49,38 @@ h1 {
 .subtitle { margin: 8px 0 0; color: var(--muted); }
 .subtitle:empty { display: none; }
 
+.legend {
+  margin: 14px 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.legend-hearts { color: var(--accent); letter-spacing: 1px; white-space: nowrap; }
+.legend-hearts span:last-child { color: var(--line); }
+
+.top-controls { display: flex; align-items: center; gap: 12px; }
+
+.languages {
+  display: flex;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+.languages button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.languages button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+
 .whoami {
   display: flex;
   align-items: center;
@@ -61,6 +93,18 @@ h1 {
   white-space: nowrap;
 }
 .whoami[hidden] { display: none; }
+
+.badge {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--taken);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
 
 .avatar {
   width: 28px;
@@ -220,6 +264,22 @@ button:disabled { opacity: 0.6; cursor: progress; }
 }
 #name-input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
 .actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 22px; }
+.actions .quiet { margin-right: auto; border-color: transparent; color: var(--muted); }
+.field-error { margin: 10px 0 0; color: #a8392a; font-size: 0.9rem; }
+.field-error[hidden] { display: none; }
+
+.google-section[hidden] { display: none; }
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 16px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.divider::before, .divider::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.google-button { display: flex; justify-content: center; min-height: 44px; }
+.hint.small { margin: 12px 0 0; font-size: 0.85rem; }
 
 .error {
   margin-top: 24px;
@@ -231,4 +291,5 @@ button:disabled { opacity: 0.6; cursor: progress; }
 
 @media (max-width: 560px) {
   .top { padding-top: 32px; flex-direction: column; align-items: flex-start; }
+  .top-controls { flex-direction: row-reverse; }
 }

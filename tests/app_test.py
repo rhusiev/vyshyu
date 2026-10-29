@@ -4,7 +4,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from wishlist.app import USERNAME_MAX_CHARS, create_app
+from wishlist.app import USERNAME_MAX_CHARS, Settings, create_app
+from wishlist.auth import InvalidCredentialError
 
 CONFIG = """
 title = "Test list"
@@ -21,17 +22,45 @@ label = "Socks"
 """
 
 
+def fake_verify(credential: str) -> str:
+    """Treat 'token-<sub>' as a valid credential for account <sub>."""
+    if not credential.startswith("token-"):
+        raise InvalidCredentialError(credential)
+    return credential.removeprefix("token-")
+
+
 @pytest.fixture
 def client(tmp_path: Path) -> Iterator[TestClient]:
     config = tmp_path / "config.toml"
     config.write_text(CONFIG)
-    with TestClient(create_app(config, tmp_path / "data" / "db.sqlite")) as test_client:
+    settings = Settings(
+        config_path=config,
+        db_path=tmp_path / "data" / "db.sqlite",
+        google_client_id="test-client",
+        secret_key="test-secret",
+        secure_cookies=False,
+    )
+    with TestClient(create_app(settings, fake_verify)) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def other_client(client: TestClient) -> TestClient:
+    """A second browser against the same app, with its own cookies."""
+    return TestClient(client.app)
 
 
 def givers(client: TestClient, item_id: str) -> list[str]:
     items = client.get("/api/wishlist").json()["items"]
-    return next(item["givers"] for item in items if item["id"] == item_id)
+    item = next(item for item in items if item["id"] == item_id)
+    return [giver["username"] for giver in item["givers"]]
+
+
+def sign_in(client: TestClient, sub: str, username: str | None = None) -> None:
+    assert client.post("/api/session/google", json={"credential": f"token-{sub}"}).is_success
+    if username is not None:
+        response = client.put("/api/session/username", json={"username": username})
+        assert response.is_success
 
 
 def test_wishlist_reflects_config(client: TestClient) -> None:
@@ -66,11 +95,12 @@ def test_username_whitespace_is_collapsed(client: TestClient) -> None:
     assert givers(client, "pen") == ["Aunt May"]
 
 
-@pytest.mark.parametrize("username", ["", "   ", "x" * (USERNAME_MAX_CHARS + 1)])
+@pytest.mark.parametrize("username", [None, "", "   ", "x" * (USERNAME_MAX_CHARS + 1)])
 def test_bad_username_is_rejected(client: TestClient, username: str) -> None:
     response = client.post("/api/items/pen/pledges", json={"username": username})
 
     assert response.status_code == 422
+    assert givers(client, "pen") == []
 
 
 def test_unknown_item_is_404(client: TestClient) -> None:
@@ -93,3 +123,97 @@ def test_frontend_is_served(client: TestClient) -> None:
 
     assert response.status_code == 200
     assert "app.js" in response.text
+
+
+def test_reserved_name_is_marked_protected(client: TestClient, other_client: TestClient) -> None:
+    other_client.post("/api/items/pen/pledges", json={"username": "Bob"})
+    sign_in(client, "anna-sub", "Anna")
+    client.post("/api/items/pen/pledges", json={})
+
+    item = client.get("/api/wishlist").json()["items"][0]
+
+    assert item["givers"] == [
+        {"username": "Bob", "protected": False},
+        {"username": "Anna", "protected": True},
+    ]
+
+
+@pytest.mark.parametrize("method", ["POST", "DELETE"])
+def test_anonymous_cannot_use_reserved_name_in_any_case(
+    client: TestClient, other_client: TestClient, method: str
+) -> None:
+    sign_in(client, "anna-sub", "Anna")
+    client.post("/api/items/pen/pledges", json={})
+
+    response = other_client.request(method, "/api/items/pen/pledges", json={"username": "aNNA"})
+
+    assert response.status_code == 403
+    assert givers(client, "pen") == ["Anna"]
+
+
+def test_signed_in_pledge_ignores_body_username(client: TestClient) -> None:
+    sign_in(client, "anna-sub", "Anna")
+
+    client.post("/api/items/pen/pledges", json={"username": "Mallory"})
+
+    assert givers(client, "pen") == ["Anna"]
+
+
+def test_signed_in_without_name_cannot_pledge(client: TestClient) -> None:
+    sign_in(client, "anna-sub")
+
+    response = client.post("/api/items/pen/pledges", json={})
+
+    assert response.status_code == 409
+
+
+def test_second_account_cannot_reserve_taken_name(
+    client: TestClient, other_client: TestClient
+) -> None:
+    sign_in(client, "anna-sub", "Anna")
+    sign_in(other_client, "eve-sub")
+
+    response = other_client.put("/api/session/username", json={"username": "anna"})
+
+    assert response.status_code == 409
+
+
+def test_rename_moves_pledges(client: TestClient) -> None:
+    sign_in(client, "anna-sub", "Anna")
+    client.post("/api/items/pen/pledges", json={})
+
+    sign_in(client, "anna-sub", "Anna K")
+
+    assert givers(client, "pen") == ["Anna K"]
+    assert client.get("/api/usernames/Anna").json() == {"reserved": False}
+
+
+def test_session_survives_and_sign_out_ends_it(client: TestClient) -> None:
+    sign_in(client, "anna-sub", "Anna")
+    assert client.get("/api/session").json()["username"] == "Anna"
+
+    client.delete("/api/session")
+
+    assert client.get("/api/session").json() == {
+        "google_client_id": "test-client",
+        "signed_in": False,
+        "username": None,
+    }
+
+
+def test_invalid_google_credential_is_401(client: TestClient) -> None:
+    response = client.post("/api/session/google", json={"credential": "forged"})
+
+    assert response.status_code == 401
+    assert client.get("/api/session").json()["signed_in"] is False
+
+
+def test_google_disabled_without_client_id(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(CONFIG)
+    settings = Settings(config_path=config, db_path=tmp_path / "db.sqlite")
+    with TestClient(create_app(settings)) as client:
+        assert client.get("/api/session").json()["google_client_id"] is None
+        response = client.post("/api/session/google", json={"credential": "token-x"})
+
+    assert response.status_code == 404
