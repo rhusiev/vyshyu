@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS accounts (
 
 
 class NameTakenError(Exception):
-    """The username is already reserved by a different account."""
+    """The username is reserved by a different account, or someone else pledged under it."""
 
 
 @dataclass(frozen=True)
@@ -54,6 +54,8 @@ class Store:
         """Open the database and create the schema if needed."""
         self._path.parent.mkdir(parents=True, exist_ok=True)
         self._conn = sqlite3.connect(self._path, check_same_thread=False)
+        # SQLite's lower() folds ASCII only, which would let "Аня" and "аня" differ
+        self._conn.create_function("username_key", 1, username_key, deterministic=True)
         self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.executescript(_SCHEMA)
 
@@ -111,18 +113,16 @@ class Store:
         """Reserve username for an account, moving its pledges if it had another name.
 
         Raises:
-            NameTakenError: a different account already reserved the name.
+            NameTakenError: another account reserved the name, or pledges were made under
+                it by anyone but this account. Those are never taken over.
         """
         key = username_key(username)
         with self._transaction() as conn:
-            owner = conn.execute(
-                "SELECT google_sub FROM accounts WHERE username_key = ?", (key,)
-            ).fetchone()
-            if owner and owner[0] != google_sub:
-                raise NameTakenError(username)
             old = conn.execute(
                 "SELECT username FROM accounts WHERE google_sub = ?", (google_sub,)
             ).fetchone()
+            if self._is_taken(conn, key, google_sub, old[0] if old else None):
+                raise NameTakenError(username)
             conn.execute(
                 "INSERT INTO accounts (google_sub, username, username_key) VALUES (?, ?, ?)"
                 " ON CONFLICT (google_sub) DO UPDATE"
@@ -131,6 +131,21 @@ class Store:
             )
             if old and old[0] != username:
                 self._move_pledges(conn, old[0], username)
+
+    @staticmethod
+    def _is_taken(
+        conn: sqlite3.Connection, key: str, google_sub: str, own_name: str | None
+    ) -> bool:
+        owner = conn.execute(
+            "SELECT google_sub FROM accounts WHERE username_key = ?", (key,)
+        ).fetchone()
+        if owner:
+            return owner[0] != google_sub
+        foreign_pledge = conn.execute(
+            "SELECT 1 FROM pledges WHERE username_key(username) = ? AND username IS NOT ?",
+            (key, own_name),
+        ).fetchone()
+        return foreign_pledge is not None
 
     @staticmethod
     def _move_pledges(conn: sqlite3.Connection, old: str, new: str) -> None:

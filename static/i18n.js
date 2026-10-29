@@ -28,6 +28,7 @@ const STRINGS = {
       "account id, not your email or photo",
     signOut: "Sign out",
     nameReserved: "Someone protected this name with Google sign-in. Pick another one, or sign in if it's yours",
+    nameTaken: "Someone already uses this name, so it can't be reserved. Pick another one",
     failed: "Something went wrong",
   },
   uk: {
@@ -56,6 +57,7 @@ const STRINGS = {
       "Ми зберігаємо лише анонімний ідентифікатор облікового запису, без пошти й фото",
     signOut: "Вийти",
     nameReserved: "Хтось захистив це ім'я входом через Google. Оберіть інше або увійдіть, якщо воно ваше",
+    nameTaken: "Цим ім'ям уже хтось користується, тож закріпити його не можна. Оберіть інше",
     failed: "Щось пішло не так",
   },
 };

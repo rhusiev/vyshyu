@@ -117,7 +117,7 @@ async function onNameSubmit(event) {
     nameDialog.close("ok");
     render();
   } catch (error) {
-    if (error.status === HTTP_CONFLICT) showNameError("nameReserved");
+    if (error.status === HTTP_CONFLICT) showNameError(session.signed_in ? "nameTaken" : "nameReserved");
     else showError(error);
   }
 }
@@ -294,9 +294,12 @@ function showError(error) {
 
 $(".pledge", itemDialog).addEventListener("click", togglePledge);
 itemDialog.addEventListener("close", () => { openItemId = null; });
-itemDialog.addEventListener("click", (event) => {
-  if (event.target === itemDialog) itemDialog.close();
-});
+// Dialogs have no padding of their own, so a click landing on the dialog is on the backdrop
+for (const dialog of [itemDialog, nameDialog]) {
+  dialog.addEventListener("click", (event) => {
+    if (event.target === dialog) dialog.close("cancel");
+  });
+}
 nameInput.addEventListener("input", updateNamePreview);
 $("#name-form").addEventListener("submit", onNameSubmit);
 $("#sign-out").addEventListener("click", () => signOut().catch(showError));

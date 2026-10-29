@@ -16,8 +16,9 @@ pledge or withdraw under it, in any letter case, and their pledges follow the ac
 any device. The server keeps only Google's account id (`sub`), never the email. The visitor
 can rename themselves, which moves their pledges to the new name
 
-Reserving a name that already has anonymous pledges adopts those pledges, since nothing can
-tell whose they were
+A name can be reserved only while nobody else uses it: if another account has it, or anyone
+pledged under it without signing in (in any letter case), the reservation is refused. Those
+pledges are never taken over, since nothing records whose they are
 
 To enable it, create an OAuth client of type "Web application" in the Google Cloud console
 (APIs & Services, Credentials) with `https://wishlist.r1a.nl` as an authorized JavaScript
@@ -29,7 +30,9 @@ WISHLIST_SECRET_KEY=<output of: python3 -c "import secrets; print(secrets.token_
 ```
 
 The secret key signs the session cookie. Changing it signs everyone out. Without
-`GOOGLE_CLIENT_ID` the Google button is hidden and everything else works the same
+`GOOGLE_CLIENT_ID` the Google button is hidden and everything else works the same.
+wishlist.r1a.nl runs without it for now: Google keeps a new OAuth app in testing mode, where
+only test users added by hand can sign in
 
 ## Config
 
@@ -66,7 +69,7 @@ point the app at its files. The session cookie is HTTPS-only unless
 - `GET /api/session` returns `google_client_id`, `signed_in` and the reserved `username`
 - `POST /api/session/google` with `{"credential": "<ID token>"}` signs in
 - `PUT /api/session/username` with `{"username": "..."}` reserves or changes the name. 409
-  if another account has it
+  if another account has it or anyone else pledged under it
 - `DELETE /api/session` signs out
 
 Usernames have their whitespace collapsed and are limited to 40 characters. Names that no

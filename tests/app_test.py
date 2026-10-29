@@ -217,3 +217,52 @@ def test_google_disabled_without_client_id(tmp_path: Path) -> None:
         response = client.post("/api/session/google", json={"credential": "token-x"})
 
     assert response.status_code == 404
+
+
+@pytest.mark.parametrize("anonymous_name", ["Anna", "aNNA"])
+def test_cannot_reserve_name_someone_pledged_under(
+    client: TestClient, other_client: TestClient, anonymous_name: str
+) -> None:
+    other_client.post("/api/items/pen/pledges", json={"username": anonymous_name})
+    sign_in(client, "anna-sub")
+
+    response = client.put("/api/session/username", json={"username": "Anna"})
+
+    assert response.status_code == 409
+    assert client.get("/api/session").json()["username"] is None
+    assert givers(client, "pen") == [anonymous_name]
+    assert other_client.get("/api/usernames/Anna").json() == {"reserved": False}
+
+
+def test_cannot_rename_onto_name_someone_pledged_under(
+    client: TestClient, other_client: TestClient
+) -> None:
+    other_client.post("/api/items/socks/pledges", json={"username": "Bob"})
+    sign_in(client, "anna-sub", "Anna")
+    client.post("/api/items/pen/pledges", json={})
+
+    response = client.put("/api/session/username", json={"username": "Bob"})
+
+    assert response.status_code == 409
+    assert givers(client, "pen") == ["Anna"]
+    assert givers(client, "socks") == ["Bob"]
+
+
+def test_cyrillic_names_compare_case_insensitively(
+    client: TestClient, other_client: TestClient
+) -> None:
+    other_client.post("/api/items/pen/pledges", json={"username": "аня"})
+    sign_in(client, "anya-sub")
+
+    response = client.put("/api/session/username", json={"username": "Аня"})
+
+    assert response.status_code == 409
+
+
+def test_account_can_recase_its_own_pledged_name(client: TestClient) -> None:
+    sign_in(client, "anna-sub", "Anna")
+    client.post("/api/items/pen/pledges", json={})
+
+    sign_in(client, "anna-sub", "ANNA")
+
+    assert givers(client, "pen") == ["ANNA"]
