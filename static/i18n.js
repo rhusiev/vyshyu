@@ -62,14 +62,22 @@ const STRINGS = {
   },
 };
 
-function detectLanguage() {
+function savedLanguage() {
   const saved = localStorage.getItem(STORAGE_KEY);
-  if (LANGUAGES.includes(saved)) return saved;
+  return LANGUAGES.includes(saved) ? saved : null;
+}
+
+function browserLanguage() {
   const preferred = navigator.languages.map((tag) => tag.slice(0, 2).toLowerCase());
   return preferred.find((code) => LANGUAGES.includes(code)) ?? "en";
 }
 
-let language = detectLanguage();
+let language = savedLanguage() ?? browserLanguage();
+
+// The wishlist owner's default beats the browser guess, never the visitor's own choice
+export function applyDefaultLanguage(code) {
+  if (code && !savedLanguage()) language = code;
+}
 
 export function getLanguage() {
   return language;

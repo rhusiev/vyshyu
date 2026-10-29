@@ -1,6 +1,6 @@
 import { identicon } from "./identicon.js";
 import { forgetGoogle, initGoogle, renderGoogleButton } from "./google.js";
-import { getLanguage, localize, setLanguage, t, translatePage } from "./i18n.js";
+import { applyDefaultLanguage, getLanguage, localize, setLanguage, t, translatePage } from "./i18n.js";
 
 const COOKIE = "wishlist_username";
 const COOKIE_MAX_AGE_S = 400 * 24 * 60 * 60; // the longest lifetime browsers allow
@@ -285,6 +285,7 @@ function openItem(id) {
 
 async function loadWishlist() {
   wishlist = await api("GET", "wishlist");
+  applyDefaultLanguage(wishlist.default_language);
   render();
 }
 
@@ -330,11 +331,14 @@ for (const button of document.querySelectorAll("[data-language]")) {
   });
 }
 
+// The first render waits for the wishlist, whose default language may differ from the guess
 async function start() {
-  render();
   session = await api("GET", "session");
   if (session.google_client_id) initGoogle(session.google_client_id, onGoogleCredential).catch(showError);
   await loadWishlist();
 }
 
-start().catch(showError);
+start().catch((error) => {
+  render();
+  showError(error);
+});

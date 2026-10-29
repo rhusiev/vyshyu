@@ -28,6 +28,7 @@ def test_item_defaults_to_lowest_want_and_empty_description() -> None:
             "duplicate item ids: a",
         ),
         ({"want": WANT, "preview_chars": 0}, "preview_chars"),
+        ({"want": WANT, "default_language": "ua"}, "default_language must be one of en, uk"),
         ({"want": WANT, "groups": [{"label": "G"}]}, r"groups\[0\]\.id"),
         ({"want": WANT, "groups": [{"id": "g"}]}, r"groups\[0\]\.label"),
         ({"want": WANT, "groups": [{"id": "g", "label": "G", "folded": "yes"}]}, "folded"),
@@ -75,3 +76,10 @@ def test_groups_default_to_unfolded_and_skip_empty_ungrouped_section() -> None:
 
     assert [(g.id, g.is_folded) for g in wishlist.groups] == [("g", False)]
     assert wishlist.has_item("a")
+
+
+@pytest.mark.parametrize(("raw_language", "expected"), [(None, None), ("uk", "uk")])
+def test_default_language_is_optional(raw_language: str | None, expected: str | None) -> None:
+    raw = {"want": WANT} | ({"default_language": raw_language} if raw_language else {})
+
+    assert parse_config(raw).default_language == expected

@@ -6,8 +6,9 @@ they are going to gift. The first time someone marks an item they type a name, a
 keeps it on that device. Several devices can use the same name, and several people can mark
 the same item. Every name gets an identicon generated from a hash of it
 
-The page picks its language from the browser and remembers the visitor's choice of the
-EN/УК switch in `localStorage`. Interface strings live in `static/i18n.js`
+A visitor's choice on the EN/УК switch is remembered in `localStorage` and always wins.
+Until they make one, the page uses `default_language` from the config, or, if that is not
+set, the first of the browser's languages it supports, falling back to English. Interface strings live in `static/i18n.js`
 
 ## Google sign-in
 
@@ -61,7 +62,7 @@ point the app at its files. The session cookie is HTTPS-only unless
 
 ## API
 
-- `GET /api/wishlist` returns the config as `groups`, each `{"id", "label", "folded",
+- `GET /api/wishlist` returns `default_language` (null if unset) and the config as `groups`, each `{"id", "label", "folded",
   "items"}`. The ungrouped items, if any, come first as a group with `id` and `label` null.
   Each item carries its `givers`, oldest pledge first, as `{"username", "protected"}`
 - `POST /api/items/{id}/pledges` with `{"username": "..."}` adds a pledge. Repeating it does

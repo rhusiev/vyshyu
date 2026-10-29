@@ -44,6 +44,7 @@ class Wishlist:
     title: Localized
     subtitle: Localized
     preview_chars: int
+    default_language: str | None
     want_min: int
     want_max: int
     groups: tuple[Group, ...]
@@ -77,10 +78,15 @@ def parse_config(raw: dict) -> Wishlist:
     preview_chars = raw.get("preview_chars", DEFAULT_PREVIEW_CHARS)
     if not isinstance(preview_chars, int) or preview_chars < 1:
         raise ConfigError("preview_chars must be a positive integer")
+    default_language = raw.get("default_language")
+    if default_language is not None and default_language not in SUPPORTED_LANGUAGES:
+        supported = ", ".join(SUPPORTED_LANGUAGES)
+        raise ConfigError(f"default_language must be one of {supported}")
     return Wishlist(
         title=_localized(raw.get("title", "Wishlist"), "title"),
         subtitle=_localized(raw.get("subtitle", ""), "subtitle"),
         preview_chars=preview_chars,
+        default_language=default_language,
         want_min=want_min,
         want_max=want_max,
         groups=tuple(groups),

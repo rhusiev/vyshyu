@@ -7,6 +7,10 @@
 title = { en = "My wishlist", uk = "Мій список бажань" }
 subtitle = { en = "Things that would make me happy - tap one to see more", uk = "Те, що мене потішить - натисніть, щоб побачити більше" }
 
+# Language for visitors who haven't picked one with the EN/УК switch: "en" or "uk".
+# Leave it out to follow the visitor's browser languages, falling back to English
+default_language = "uk"
+
 # Card previews cut the description after this many characters; the popup shows it all
 preview_chars = 120
 

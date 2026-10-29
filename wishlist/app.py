@@ -143,6 +143,7 @@ def create_app(settings: Settings, verify_google: GoogleVerifier | None = None) 
             "title": wishlist.title,
             "subtitle": wishlist.subtitle,
             "preview_chars": wishlist.preview_chars,
+            "default_language": wishlist.default_language,
             "want": {"min": wishlist.want_min, "max": wishlist.want_max},
             "groups": [
                 {

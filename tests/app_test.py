@@ -89,6 +89,7 @@ def test_wishlist_reflects_config(client: TestClient) -> None:
 
     assert body["title"] == "Test list"
     assert body["want"] == {"min": 1, "max": 5}
+    assert body["default_language"] is None
     assert [(i["id"], i["want"]) for i in all_items(client)] == [("pen", 4), ("socks", 1)]
 
 
