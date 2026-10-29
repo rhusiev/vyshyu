@@ -16,6 +16,8 @@ const nameInput = $("#name-input");
 let wishlist = null;
 let session = { google_client_id: null, signed_in: false, username: null };
 let openItemId = null;
+// Group id -> whether the visitor has it open; survives re-renders, not reloads
+const openGroups = new Map();
 
 class HttpError extends Error {
   constructor(status) {
@@ -198,6 +200,23 @@ function renderCard(item) {
   return li;
 }
 
+function findItem(id) {
+  return wishlist.groups.flatMap((group) => group.items).find((item) => item.id === id);
+}
+
+function renderGroup(group) {
+  const list = el("ul", "items");
+  list.append(...group.items.map(renderCard));
+  if (group.id === null) return list;
+  const details = el("details", "group");
+  details.open = openGroups.get(group.id) ?? !group.folded;
+  details.addEventListener("toggle", () => openGroups.set(group.id, details.open));
+  const summary = el("summary");
+  summary.append(el("h2", "group-label", localize(group.label)), el("span", "group-count", group.items.length));
+  details.append(summary, list);
+  return details;
+}
+
 function protectedBadge() {
   const badge = el("span", "badge", "✓");
   badge.title = t("protectedName");
@@ -213,7 +232,7 @@ function renderGiver(giver) {
 }
 
 function renderDialog() {
-  const item = wishlist.items.find((i) => i.id === openItemId);
+  const item = findItem(openItemId);
   if (!item) return itemDialog.close();
   $(".dialog-label", itemDialog).textContent = localize(item.label);
   $(".want", itemDialog).replaceWith(wantMeter(item.want));
@@ -253,7 +272,7 @@ function render() {
   document.title = title;
   $("#title").textContent = title;
   $("#subtitle").textContent = localize(wishlist.subtitle);
-  $("#items").replaceChildren(...wishlist.items.map(renderCard));
+  $("#groups").replaceChildren(...wishlist.groups.map(renderGroup));
   if (openItemId) renderDialog();
   if (nameDialog.open) renderNameDialog();
 }
@@ -272,7 +291,7 @@ async function loadWishlist() {
 async function togglePledge() {
   const username = currentUsername() ?? (await askName());
   if (!username) return;
-  const item = wishlist.items.find((i) => i.id === openItemId);
+  const item = findItem(openItemId);
   const button = $(".pledge", itemDialog);
   button.disabled = true;
   try {

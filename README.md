@@ -37,7 +37,9 @@ only test users added by hand can sign in
 ## Config
 
 Copy `config.example.toml` to `config.toml`. The comments in the example describe every
-field, including how to give text in both languages. The app re-reads the file on the next request after it changes, so edits need no
+field, including how to give text in both languages and how to group items. A group is a
+foldable section with its own heading. `folded = true` starts it closed. A visitor's own
+folding lasts until they reload the page. Items outside any group come first, with no heading. The app re-reads the file on the next request after it changes, so edits need no
 restart. An invalid file makes the API return 500 until it is fixed
 
 Pledges are stored by item `id`, so rewording a label keeps them. Removing an item from the
@@ -59,8 +61,9 @@ point the app at its files. The session cookie is HTTPS-only unless
 
 ## API
 
-- `GET /api/wishlist` returns the config plus `givers` for each item, oldest pledge first,
-  each as `{"username", "protected"}`
+- `GET /api/wishlist` returns the config as `groups`, each `{"id", "label", "folded",
+  "items"}`. The ungrouped items, if any, come first as a group with `id` and `label` null.
+  Each item carries its `givers`, oldest pledge first, as `{"username", "protected"}`
 - `POST /api/items/{id}/pledges` with `{"username": "..."}` adds a pledge. Repeating it does
   nothing. Signed-in visitors always pledge under their reserved name, whatever the body says
 - `DELETE /api/items/{id}/pledges` with the same body withdraws it

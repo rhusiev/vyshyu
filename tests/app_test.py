@@ -29,6 +29,23 @@ def fake_verify(credential: str) -> str:
     return credential.removeprefix("token-")
 
 
+GROUPED_CONFIG = """
+[want]
+min = 1
+max = 3
+[[items]]
+id = "loose"
+label = "Loose"
+[[groups]]
+id = "games"
+label = { en = "Board games", uk = "Настільні ігри" }
+folded = true
+[[groups.items]]
+id = "wingspan"
+label = "Wingspan"
+"""
+
+
 @pytest.fixture
 def client(tmp_path: Path) -> Iterator[TestClient]:
     config = tmp_path / "config.toml"
@@ -50,9 +67,13 @@ def other_client(client: TestClient) -> TestClient:
     return TestClient(client.app)
 
 
+def all_items(client: TestClient) -> list[dict]:
+    groups = client.get("/api/wishlist").json()["groups"]
+    return [item for group in groups for item in group["items"]]
+
+
 def givers(client: TestClient, item_id: str) -> list[str]:
-    items = client.get("/api/wishlist").json()["items"]
-    item = next(item for item in items if item["id"] == item_id)
+    item = next(item for item in all_items(client) if item["id"] == item_id)
     return [giver["username"] for giver in item["givers"]]
 
 
@@ -68,7 +89,7 @@ def test_wishlist_reflects_config(client: TestClient) -> None:
 
     assert body["title"] == "Test list"
     assert body["want"] == {"min": 1, "max": 5}
-    assert [(i["id"], i["want"]) for i in body["items"]] == [("pen", 4), ("socks", 1)]
+    assert [(i["id"], i["want"]) for i in all_items(client)] == [("pen", 4), ("socks", 1)]
 
 
 def test_many_people_can_pledge_one_item_once_each(client: TestClient) -> None:
@@ -113,7 +134,7 @@ def test_config_edit_is_picked_up_without_restart(client: TestClient, tmp_path: 
     config = tmp_path / "config.toml"
     config.write_text(CONFIG.replace('label = "Pen"', 'label = "Fountain pen"'))
 
-    labels = [i["label"] for i in client.get("/api/wishlist").json()["items"]]
+    labels = [i["label"] for i in all_items(client)]
 
     assert labels[0] == "Fountain pen"
 
@@ -130,7 +151,7 @@ def test_reserved_name_is_marked_protected(client: TestClient, other_client: Tes
     sign_in(client, "anna-sub", "Anna")
     client.post("/api/items/pen/pledges", json={})
 
-    item = client.get("/api/wishlist").json()["items"][0]
+    item = all_items(client)[0]
 
     assert item["givers"] == [
         {"username": "Bob", "protected": False},
@@ -266,3 +287,19 @@ def test_account_can_recase_its_own_pledged_name(client: TestClient) -> None:
     sign_in(client, "anna-sub", "ANNA")
 
     assert givers(client, "pen") == ["ANNA"]
+
+
+def test_groups_come_after_ungrouped_items_and_accept_pledges(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(GROUPED_CONFIG)
+    settings = Settings(config_path=config, db_path=tmp_path / "db.sqlite")
+    with TestClient(create_app(settings)) as grouped:
+        grouped.post("/api/items/wingspan/pledges", json={"username": "Anna"})
+        groups = grouped.get("/api/wishlist").json()["groups"]
+
+    assert [(g["id"], g["label"], g["folded"]) for g in groups] == [
+        (None, None, False),
+        ("games", {"en": "Board games", "uk": "Настільні ігри"}, True),
+    ]
+    assert [i["id"] for i in groups[0]["items"]] == ["loose"]
+    assert groups[1]["items"][0]["givers"] == [{"username": "Anna", "protected": False}]

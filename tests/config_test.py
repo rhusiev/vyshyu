@@ -28,6 +28,25 @@ def test_item_defaults_to_lowest_want_and_empty_description() -> None:
             "duplicate item ids: a",
         ),
         ({"want": WANT, "preview_chars": 0}, "preview_chars"),
+        ({"want": WANT, "groups": [{"label": "G"}]}, r"groups\[0\]\.id"),
+        ({"want": WANT, "groups": [{"id": "g"}]}, r"groups\[0\]\.label"),
+        ({"want": WANT, "groups": [{"id": "g", "label": "G", "folded": "yes"}]}, "folded"),
+        (
+            {"want": WANT, "groups": [{"id": "g", "label": "G"}, {"id": "g", "label": "H"}]},
+            "duplicate group ids: g",
+        ),
+        (
+            {
+                "want": WANT,
+                "items": [{"id": "a", "label": "A"}],
+                "groups": [{"id": "g", "label": "G", "items": [{"id": "a", "label": "B"}]}],
+            },
+            "duplicate item ids: a",
+        ),
+        (
+            {"want": WANT, "groups": [{"id": "g", "label": "G", "items": [{"id": "x"}]}]},
+            r"groups\[0\]\.items\[0\]\.label",
+        ),
     ],
 )
 def test_invalid_config_is_rejected(raw: dict, message: str) -> None:
@@ -47,3 +66,12 @@ def test_text_can_be_given_per_language() -> None:
     assert wishlist.title == {"en": "Wishlist", "uk": "Список бажань"}
     assert wishlist.items[0].label == {"en": "Pen", "uk": "Ручка"}
     assert wishlist.items[0].description == "x"
+
+
+def test_groups_default_to_unfolded_and_skip_empty_ungrouped_section() -> None:
+    wishlist = parse_config(
+        {"want": WANT, "groups": [{"id": "g", "label": "G", "items": [{"id": "a", "label": "A"}]}]}
+    )
+
+    assert [(g.id, g.is_folded) for g in wishlist.groups] == [("g", False)]
+    assert wishlist.has_item("a")

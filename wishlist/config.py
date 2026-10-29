@@ -28,6 +28,16 @@ class Item:
 
 
 @dataclass(frozen=True)
+class Group:
+    """A foldable section of items. The ungrouped items form one with no id or label."""
+
+    id: str | None
+    label: Localized | None
+    is_folded: bool
+    items: tuple[Item, ...]
+
+
+@dataclass(frozen=True)
 class Wishlist:
     """The whole configured wishlist."""
 
@@ -36,7 +46,12 @@ class Wishlist:
     preview_chars: int
     want_min: int
     want_max: int
-    items: tuple[Item, ...]
+    groups: tuple[Group, ...]
+
+    @property
+    def items(self) -> list[Item]:
+        """Every item, in display order."""
+        return [item for group in self.groups for item in group.items]
 
     def has_item(self, item_id: str) -> bool:
         """Return whether an item with this id is configured."""
@@ -50,14 +65,15 @@ def parse_config(raw: dict) -> Wishlist:
     want_max = _int(want, "max", "want")
     if want_min > want_max:
         raise ConfigError(f"want.min ({want_min}) is greater than want.max ({want_max})")
-    items = tuple(
-        _parse_item(entry, index, want_min, want_max)
-        for index, entry in enumerate(raw.get("items", []))
-    )
-    ids = [item.id for item in items]
-    duplicates = sorted({item_id for item_id in ids if ids.count(item_id) > 1})
-    if duplicates:
-        raise ConfigError(f"duplicate item ids: {', '.join(duplicates)}")
+    ungrouped = _parse_items(raw.get("items", []), "items", want_min, want_max)
+    groups = [
+        _parse_group(entry, f"groups[{index}]", want_min, want_max)
+        for index, entry in enumerate(raw.get("groups", []))
+    ]
+    if ungrouped:
+        groups.insert(0, Group(id=None, label=None, is_folded=False, items=ungrouped))
+    _reject_duplicates([g.id for g in groups if g.id is not None], "group")
+    _reject_duplicates([item.id for group in groups for item in group.items], "item")
     preview_chars = raw.get("preview_chars", DEFAULT_PREVIEW_CHARS)
     if not isinstance(preview_chars, int) or preview_chars < 1:
         raise ConfigError("preview_chars must be a positive integer")
@@ -67,7 +83,35 @@ def parse_config(raw: dict) -> Wishlist:
         preview_chars=preview_chars,
         want_min=want_min,
         want_max=want_max,
-        items=items,
+        groups=tuple(groups),
+    )
+
+
+def _reject_duplicates(ids: list[str], kind: str) -> None:
+    duplicates = sorted({item_id for item_id in ids if ids.count(item_id) > 1})
+    if duplicates:
+        raise ConfigError(f"duplicate {kind} ids: {', '.join(duplicates)}")
+
+
+def _parse_group(entry: dict, where: str, want_min: int, want_max: int) -> Group:
+    group_id = entry.get("id")
+    if not isinstance(group_id, str) or not group_id.strip():
+        raise ConfigError(f"{where}.id must be a non-empty string")
+    is_folded = entry.get("folded", False)
+    if not isinstance(is_folded, bool):
+        raise ConfigError(f"{where}.folded must be true or false")
+    return Group(
+        id=group_id.strip(),
+        label=_localized(entry.get("label"), f"{where}.label", required=True),
+        is_folded=is_folded,
+        items=_parse_items(entry.get("items", []), f"{where}.items", want_min, want_max),
+    )
+
+
+def _parse_items(entries: list, where: str, want_min: int, want_max: int) -> tuple[Item, ...]:
+    return tuple(
+        _parse_item(entry, f"{where}[{index}]", want_min, want_max)
+        for index, entry in enumerate(entries)
     )
 
 
@@ -94,8 +138,7 @@ def _localized(value: object, where: str, *, required: bool = False) -> Localize
     return texts[""] if "" in texts else texts
 
 
-def _parse_item(entry: dict, index: int, want_min: int, want_max: int) -> Item:
-    where = f"items[{index}]"
+def _parse_item(entry: dict, where: str, want_min: int, want_max: int) -> Item:
     item_id = entry.get("id")
     if not isinstance(item_id, str) or not item_id.strip():
         raise ConfigError(f"{where}.id must be a non-empty string")

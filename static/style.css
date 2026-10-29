@@ -126,6 +126,39 @@ main { max-width: 1080px; margin: 0 auto; padding: 8px 24px 64px; }
   gap: 18px;
 }
 
+.items + .group, .group + .group { margin-top: 28px; }
+
+.group summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+.group summary::-webkit-details-marker { display: none; }
+.group summary::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+.group[open] summary::before { transform: rotate(45deg); }
+.group:not([open]) summary { margin-bottom: 0; }
+.group-label { margin: 0; font: 600 1.45rem/1.2 var(--serif); }
+.group-count {
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--line);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 .card {
   width: 100%;
   height: 100%;

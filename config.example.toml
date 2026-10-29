@@ -15,8 +15,9 @@ preview_chars = 120
 min = 1
 max = 5
 
-# `id` ties pledges to an item - keep it stable when you reword the label.
-# `description` and `want` are optional; `want` defaults to want.min
+# Items listed here, outside any group, are shown first, without a heading.
+# `id` ties pledges to an item - keep it stable when you reword the label, and unique
+# across all groups. `description` and `want` are optional; `want` defaults to want.min
 [[items]]
 id = "fountain-pen"
 label = { en = "A fountain pen", uk = "Перова ручка" }
@@ -24,12 +25,33 @@ description = { en = "Fine nib, any colour except red. Something that writes smo
 want = 5
 
 [[items]]
+id = "socks"
+label = { en = "Warm socks", uk = "Теплі шкарпетки" }
+want = 1
+
+# A group is a foldable section. `folded = true` starts it closed; visitors can still open it.
+# Its items follow as [[groups.items]] until the next [[groups]]
+[[groups]]
+id = "board-games"
+label = { en = "Board games", uk = "Настільні ігри" }
+
+[[groups.items]]
 id = "board-game"
 label = "Wingspan"
 description = { en = "The base game is enough.", uk = "Достатньо базової гри." }
 want = 3
 
-[[items]]
-id = "socks"
-label = { en = "Warm socks", uk = "Теплі шкарпетки" }
-want = 1
+[[groups.items]]
+id = "azul"
+label = "Azul"
+want = 2
+
+[[groups]]
+id = "books"
+label = { en = "Books", uk = "Книжки" }
+folded = true
+
+[[groups.items]]
+id = "dune"
+label = { en = "Dune, hardcover", uk = "Дюна, тверда обкладинка" }
+want = 4

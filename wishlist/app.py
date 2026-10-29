@@ -15,8 +15,8 @@ from pydantic import BaseModel, field_validator
 from starlette.middleware.sessions import SessionMiddleware
 
 from wishlist.auth import GoogleVerifier, InvalidCredentialError, google_verifier
-from wishlist.config import ConfigSource
-from wishlist.store import NameTakenError, Store
+from wishlist.config import ConfigSource, Item
+from wishlist.store import Giver, NameTakenError, Store
 
 USERNAME_MAX_CHARS = 40
 SESSION_MAX_AGE_S = 400 * 24 * 60 * 60
@@ -71,6 +71,17 @@ class GoogleCredential(BaseModel):
     """The ID token the "Sign in with Google" button hands to the page."""
 
     credential: str
+
+
+def item_view(item: Item, givers: list[Giver]) -> dict:
+    """Shape an item and its givers for the API."""
+    return {
+        "id": item.id,
+        "label": item.label,
+        "description": item.description,
+        "want": item.want,
+        "givers": [{"username": g.username, "protected": g.is_protected} for g in givers],
+    }
 
 
 def create_app(settings: Settings, verify_google: GoogleVerifier | None = None) -> FastAPI:
@@ -133,18 +144,14 @@ def create_app(settings: Settings, verify_google: GoogleVerifier | None = None) 
             "subtitle": wishlist.subtitle,
             "preview_chars": wishlist.preview_chars,
             "want": {"min": wishlist.want_min, "max": wishlist.want_max},
-            "items": [
+            "groups": [
                 {
-                    "id": item.id,
-                    "label": item.label,
-                    "description": item.description,
-                    "want": item.want,
-                    "givers": [
-                        {"username": g.username, "protected": g.is_protected}
-                        for g in givers.get(item.id, [])
-                    ],
+                    "id": group.id,
+                    "label": group.label,
+                    "folded": group.is_folded,
+                    "items": [item_view(item, givers.get(item.id, [])) for item in group.items],
                 }
-                for item in wishlist.items
+                for group in wishlist.groups
             ],
         }
 
