@@ -83,7 +83,7 @@ def parse_config(raw: dict) -> Wishlist:
         supported = ", ".join(SUPPORTED_LANGUAGES)
         raise ConfigError(f"default_language must be one of {supported}")
     return Wishlist(
-        title=_localized(raw.get("title", "Wishlist"), "title"),
+        title=_localized(raw.get("title", "Vyshyu"), "title"),
         subtitle=_localized(raw.get("subtitle", ""), "subtitle"),
         preview_chars=preview_chars,
         default_language=default_language,

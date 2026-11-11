@@ -1,9 +1,9 @@
 services:
-  wishlist:
+  vyshyu:
     build: .
-    container_name: wishlist
+    container_name: vyshyu
     restart: unless-stopped
-    # GOOGLE_CLIENT_ID and WISHLIST_SECRET_KEY, see README
+    # GOOGLE_CLIENT_ID and VYSHYU_SECRET_KEY, see README
     env_file:
       - path: .env
         required: false

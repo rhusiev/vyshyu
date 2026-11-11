@@ -1,4 +1,4 @@
-# wishlist
+# vyshyu
 
 A small wishlist page in English and Ukrainian. The items, their descriptions and how much
 each one is wanted come from a config file. Visitors open an item and mark it as something
@@ -22,12 +22,13 @@ pledged under it without signing in (in any letter case), the reservation is ref
 pledges are never taken over, since nothing records whose they are
 
 To enable it, create an OAuth client of type "Web application" in the Google Cloud console
-(APIs & Services, Credentials) with `https://wishlist.r1a.nl` as an authorized JavaScript
-origin. No redirect URI is needed. Then put this in `.env` next to `docker-compose.yml`:
+(APIs & Services, Credentials) with the address the page is served from as an authorized
+JavaScript origin - `https://wishlist.r1a.nl` for the current deployment. No redirect URI is
+needed. Then put this in `.env` next to `docker-compose.yml`:
 
 ```sh
 GOOGLE_CLIENT_ID=<id>.apps.googleusercontent.com
-WISHLIST_SECRET_KEY=<output of: python3 -c "import secrets; print(secrets.token_urlsafe(32))">
+VYSHYU_SECRET_KEY=<output of: python3 -c "import secrets; print(secrets.token_urlsafe(32))">
 ```
 
 The secret key signs the session cookie. Changing it signs everyone out. Without
@@ -52,17 +53,17 @@ config hides its pledges. Adding it back with the same `id` brings them back
 python3 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
 cp config.example.toml config.toml
-.venv/bin/uvicorn wishlist.app:app_from_env --factory --reload
+.venv/bin/uvicorn vyshyu.app:app_from_env --factory --reload
 .venv/bin/python -m pytest tests
 ```
 
-`WISHLIST_CONFIG` (default `config.toml`) and `WISHLIST_DB` (default `data/wishlist.db`)
+`VYSHYU_CONFIG` (default `config.toml`) and `VYSHYU_DB` (default `data/vyshyu.db`)
 point the app at its files. The session cookie is HTTPS-only unless
-`WISHLIST_SECURE_COOKIES=0`, which plain-HTTP local runs need for sign-in to stick
+`VYSHYU_SECURE_COOKIES=0`, which plain-HTTP local runs need for sign-in to stick
 
 ## API
 
-- `GET /api/wishlist` returns `default_language` (null if unset) and the config as `groups`, each `{"id", "label", "folded",
+- `GET /api/vyshyu` returns `default_language` (null if unset) and the config as `groups`, each `{"id", "label", "folded",
   "items"}`. The ungrouped items, if any, come first as a group with `id` and `label` null.
   Each item carries its `givers`, oldest pledge first, as `{"username", "protected"}`
 - `POST /api/items/{id}/pledges` with `{"username": "..."}` adds a pledge. Repeating it does
@@ -82,5 +83,9 @@ account reserved are unprotected: anyone can add or withdraw a pledge under them
 ## Deploy
 
 `docker-compose.yml` builds the image and joins the external `caddy` network, where a
-reverse proxy forwards to `wishlist:8000`. `config.toml` is mounted read-only and the SQLite
+reverse proxy forwards to `vyshyu:8000`. `config.toml` is mounted read-only and the SQLite
 database lives in `./data`, which must be writable by uid 1000
+
+A deployment that ran under the old name needs three changes: rename its `WISHLIST_*`
+variables to `VYSHYU_*`, point `VYSHYU_DB` at its existing database file, since the default
+is now `data/vyshyu.db`, and update the reverse proxy upstream if the container name moved

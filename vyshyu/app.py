@@ -14,9 +14,9 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, field_validator
 from starlette.middleware.sessions import SessionMiddleware
 
-from wishlist.auth import GoogleVerifier, InvalidCredentialError, google_verifier
-from wishlist.config import ConfigSource, Item
-from wishlist.store import Giver, NameTakenError, Store
+from vyshyu.auth import GoogleVerifier, InvalidCredentialError, google_verifier
+from vyshyu.config import ConfigSource, Item
+from vyshyu.store import Giver, NameTakenError, Store
 
 USERNAME_MAX_CHARS = 40
 SESSION_MAX_AGE_S = 400 * 24 * 60 * 60
@@ -135,8 +135,8 @@ def create_app(settings: Settings, verify_google: GoogleVerifier | None = None) 
             raise HTTPException(status_code=403, detail="this name is reserved")
         return pledge.username
 
-    @app.get("/api/wishlist")
-    def get_wishlist() -> dict:
+    @app.get("/api/vyshyu")
+    def get_vyshyu() -> dict:
         wishlist = config.load()
         givers = store.givers_by_item()
         return {
@@ -202,13 +202,13 @@ def create_app(settings: Settings, verify_google: GoogleVerifier | None = None) 
 
 
 def app_from_env() -> FastAPI:
-    """Build the application from WISHLIST_* and GOOGLE_CLIENT_ID variables."""
+    """Build the application from VYSHYU_* and GOOGLE_CLIENT_ID variables."""
     return create_app(
         Settings(
-            config_path=Path(os.environ.get("WISHLIST_CONFIG", "config.toml")),
-            db_path=Path(os.environ.get("WISHLIST_DB", "data/wishlist.db")),
+            config_path=Path(os.environ.get("VYSHYU_CONFIG", "config.toml")),
+            db_path=Path(os.environ.get("VYSHYU_DB", "data/vyshyu.db")),
             google_client_id=os.environ.get("GOOGLE_CLIENT_ID") or None,
-            secret_key=os.environ.get("WISHLIST_SECRET_KEY") or None,
-            secure_cookies=os.environ.get("WISHLIST_SECURE_COOKIES", "1") != "0",
+            secret_key=os.environ.get("VYSHYU_SECRET_KEY") or None,
+            secure_cookies=os.environ.get("VYSHYU_SECURE_COOKIES", "1") != "0",
         )
     )

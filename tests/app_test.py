@@ -4,8 +4,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from wishlist.app import USERNAME_MAX_CHARS, Settings, create_app
-from wishlist.auth import InvalidCredentialError
+from vyshyu.app import USERNAME_MAX_CHARS, Settings, create_app
+from vyshyu.auth import InvalidCredentialError
 
 CONFIG = """
 title = "Test list"
@@ -68,7 +68,7 @@ def other_client(client: TestClient) -> TestClient:
 
 
 def all_items(client: TestClient) -> list[dict]:
-    groups = client.get("/api/wishlist").json()["groups"]
+    groups = client.get("/api/vyshyu").json()["groups"]
     return [item for group in groups for item in group["items"]]
 
 
@@ -85,7 +85,7 @@ def sign_in(client: TestClient, sub: str, username: str | None = None) -> None:
 
 
 def test_wishlist_reflects_config(client: TestClient) -> None:
-    body = client.get("/api/wishlist").json()
+    body = client.get("/api/vyshyu").json()
 
     assert body["title"] == "Test list"
     assert body["want"] == {"min": 1, "max": 5}
@@ -296,7 +296,7 @@ def test_groups_come_after_ungrouped_items_and_accept_pledges(tmp_path: Path) ->
     settings = Settings(config_path=config, db_path=tmp_path / "db.sqlite")
     with TestClient(create_app(settings)) as grouped:
         grouped.post("/api/items/wingspan/pledges", json={"username": "Anna"})
-        groups = grouped.get("/api/wishlist").json()["groups"]
+        groups = grouped.get("/api/vyshyu").json()["groups"]
 
     assert [(g["id"], g["label"], g["folded"]) for g in groups] == [
         (None, None, False),

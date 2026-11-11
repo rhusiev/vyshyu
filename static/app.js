@@ -2,7 +2,7 @@ import { identicon } from "./identicon.js";
 import { forgetGoogle, initGoogle, renderGoogleButton } from "./google.js";
 import { applyDefaultLanguage, getLanguage, localize, setLanguage, t, translatePage } from "./i18n.js";
 
-const COOKIE = "wishlist_username";
+const COOKIE = "vyshyu_username";
 const COOKIE_MAX_AGE_S = 400 * 24 * 60 * 60; // the longest lifetime browsers allow
 const AVATAR_STACK_MAX = 4;
 const HTTP_FORBIDDEN = 403;
@@ -284,7 +284,7 @@ function openItem(id) {
 }
 
 async function loadWishlist() {
-  wishlist = await api("GET", "wishlist");
+  wishlist = await api("GET", "vyshyu");
   applyDefaultLanguage(wishlist.default_language);
   render();
 }

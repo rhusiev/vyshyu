@@ -1,4 +1,4 @@
-const STORAGE_KEY = "wishlist_language";
+const STORAGE_KEY = "vyshyu_language";
 export const LANGUAGES = ["en", "uk"];
 
 const STRINGS = {

@@ -1,6 +1,6 @@
 import pytest
 
-from wishlist.config import ConfigError, parse_config
+from vyshyu.config import ConfigError, parse_config
 
 WANT = {"min": 1, "max": 3}
 
