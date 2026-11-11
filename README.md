@@ -22,9 +22,10 @@ pledged under it without signing in (in any letter case), the reservation is ref
 pledges are never taken over, since nothing records whose they are
 
 To enable it, create an OAuth client of type "Web application" in the Google Cloud console
-(APIs & Services, Credentials) with the address the page is served from as an authorized
-JavaScript origin - `https://wishlist.r1a.nl` for the current deployment. No redirect URI is
-needed. Then put this in `.env` next to `docker-compose.yml`:
+(APIs & Services, Credentials) with the addresses the page is served from as authorized
+JavaScript origins - `https://wishlist.r1a.nl` and `https://vyshyu.r1a.nl` for the current
+deployment. No redirect URI is needed. Then put this in `.env` next to
+`docker-compose.yml`:
 
 ```sh
 GOOGLE_CLIENT_ID=<id>.apps.googleusercontent.com
@@ -32,9 +33,10 @@ VYSHYU_SECRET_KEY=<output of: python3 -c "import secrets; print(secrets.token_ur
 ```
 
 The secret key signs the session cookie. Changing it signs everyone out. Without
-`GOOGLE_CLIENT_ID` the Google button is hidden and everything else works the same.
-wishlist.r1a.nl runs without it for now: Google keeps a new OAuth app in testing mode, where
-only test users added by hand can sign in
+`GOOGLE_CLIENT_ID` the Google button is hidden and everything else works the same. The
+deployment serves both `vyshyu.r1a.nl` and `wishlist.r1a.nl` from one container, and runs
+without sign-in for now: Google keeps a new OAuth app in testing mode, where only test users
+added by hand can sign in
 
 ## Config
 
@@ -85,6 +87,11 @@ account reserved are unprotected: anyone can add or withdraw a pledge under them
 `docker-compose.yml` builds the image and joins the external `caddy` network, where a
 reverse proxy forwards to `vyshyu:8000`. `config.toml` is mounted read-only and the SQLite
 database lives in `./data`, which must be writable by uid 1000
+
+One reverse proxy block can list several hostnames, as the current deployment does for
+`vyshyu.r1a.nl` and `wishlist.r1a.nl`. Both then share one container and one database. The
+name cookie is scoped to its hostname, so a visitor types their name once on each address
+unless they sign in
 
 A deployment that ran under the old name needs three changes: rename its `WISHLIST_*`
 variables to `VYSHYU_*`, point `VYSHYU_DB` at its existing database file, since the default
